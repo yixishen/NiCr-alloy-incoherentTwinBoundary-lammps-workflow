@@ -20,76 +20,8 @@ It is built around the work in :
 
 ---
 
-## 1. What should go in the public repo
-
-Your public repo should focus on the parts that are genuinely useful to other researchers:
-
-### Keep
-- the template LAMMPS input files
-- the Python scripts that generate inputs
-- the Python scripts that auto-submit jobs
-- the cleaned post-processing scripts
-- a small number of example files
-- a clear README
-- a GitHub Pages site in `docs/`
-
-### Usually do not keep
-- large dump files
-- all generated simulation folders
-- SLURM output logs
-- absolute paths like `/home/yixishen/...`
-- private cluster details
-- the published journal PDF unless your agreement clearly allows redistribution
-- third-party potential files unless redistribution is clearly allowed
-
----
-
-## 2. Recommended public repo structure
-
-```text
-nicr-itb-lammps-workflow/
-├── README.md
-├── .gitignore
-├── CITATION.cff
-├── LICENSE_GUIDE.md
-├── CHECKLIST_BEFORE_PUBLISHING.md
-├── config/
-│   └── project_paths.example.env
-├── docs/
-│   ├── _config.yml
-│   ├── index.md
-│   ├── getting-started.md
-│   ├── workflow.md
-│   ├── github-guide.md
-│   └── troubleshooting.md
-├── examples/
-│   └── folder_map.md
-├── potentials/
-│   └── README.md
-├── scripts/
-│   ├── create_input/
-│   │   ├── create_step1_lattice_const.py
-│   │   └── create_sfe.py
-│   ├── autorun/
-│   │   └── autorun_eco_1185.py
-│   └── postprocess/
-│       └── README.md
-├── simulations/
-│   └── README.md
-└── templates/
-    ├── README.md
-    ├── in.step1_lattice_const.template
-    ├── in.sfe.template
-    └── run.lammps.slurm.template
-```
-
-This structure keeps the logic of your original folder tree, but makes it easier for outside users to understand.
-
----
-
-## 3. How your local workflow maps into this repo
-
-From your screenshots and description, your workflow is roughly:
+## Workflow
+The workflow is roughly:
 
 ### Step 1 — basic reference-property calculations
 Example: lattice constants, equilibrium quantities, maybe SFE inputs.
