@@ -1,102 +1,72 @@
+# NiCr ITB MD Workflow
 
-# NiCr ITB LAMMPS workflow template
+This repository shares a LAMMPS-based molecular dynamics (MD) workflow for studying
+incoherent twin boundary (ITB) structure, energy, and migration in Ni-based alloys.
 
-This repository is a public-facing template for sharing a LAMMPS workflow built around:
+The workflow is organized in two parts:
 
-1. template-based input generation,
-2. batch execution on a SLURM cluster, and
-3. post-processing of simulation outputs.
+1. **Tutorial / manual examples**  
+   A step-by-step introduction to the main calculations, including:
+   - lattice constant calculation,
+   - rigid-body grid search,
+   - a single ECO-driven boundary migration case.
 
-It is designed around the workflow used for the NiCr incoherent twin-boundary study reported in:
+2. **Automated workflow for statistical studies**  
+   A Python-based framework for:
+   - generating many input files from templates,
+   - submitting repeated jobs on SLURM,
+   - organizing outputs for post-processing.
 
-> Y. Shen and I. J. Beyerlein, *Temperature-induced migration of Σ3[112] twin boundaries in NiCr alloy*, Journal of Materials Science (2025).
-[Read the paper here](https://doi.org/10.1007/s10853-025-11276-9)
+This structure is intended to help new users first understand each physical calculation
+in a transparent way, and then scale up to production studies where many repeated MD
+simulations are needed.
 
-## What this repo is for
+## Related paper
 
-This repo is meant to share the workflow logic behind the paper, not to dump every raw file from a cluster run.
+This workflow is associated with the following paper:
 
-The goal is to make the project understandable and reusable for someone who wants to:
+**Yixi Shen and Irene J. Beyerlein**  
+*Temperature-induced migration of Σ3[112] twin boundaries in NiCr alloy*  
+**Journal of Materials Science** (2025)  
+DOI: [10.1007/s10853-025-11276-9](https://doi.org/10.1007/s10853-025-11276-9)
 
-- generate large numbers of LAMMPS inputs from templates,
-- organize simulations by composition / potential / temperature / seed,
-- submit and monitor many jobs on SLURM,
-- collect outputs for later analysis,
-- understand how the paper workflow maps onto code and folders.
+## Why this repository exists
 
-## Workflow summary
+For alloy/interface migration problems, a single MD simulation is usually not enough
+to characterize the response. The measured migration behavior can depend on:
 
-The folder naming in this project follows a multi-step workflow:
+- the local atomic configuration near the boundary,
+- the initial thermal state,
+- the chosen temperature and driving force,
+- the boundary structure used as the starting point.
 
-- Step 1 – lattice constant / reference properties
-- Step 2 – rigid-body grid search
-- Step 3 – create equal-Σ3 boundary models
-- Step 4 – ECO-driven migration simulations
-- Post-processing – extract energies, positions, and velocities
+For that reason, this repository is designed not only to show how to run one example,
+but also how to automate repeated simulations and organize the results for statistical analysis.
 
-## Repository layout
+## Repository structure
 
 ```text
-scripts/create_input/   # write case folders and LAMMPS inputs from templates
-scripts/autorun/        # submit and monitor jobs on SLURM
-scripts/postprocess/    # extract measurable quantities from outputs
-templates/              # LAMMPS and SLURM templates
-simulations/            # generated case folders (usually ignored in Git)
-docs/                   # GitHub Pages site
-```
-
-## Quick start
-
-1. Put your clean LAMMPS and SLURM templates in `templates/`.
-2. Edit the configuration block at the top of the Python scripts.
-3. Run a `scripts/create_input/*.py` script to generate cases.
-4. Run `scripts/autorun/*.py` on your cluster login node.
-5. Use your post-processing scripts to extract final results.
-
-## What to edit before running
-
-- potential file locations
-- cluster partition / walltime / ntasks
-- composition list
-- temperature list
-- seeds
-- directory conventions
-
-## Recommended public-sharing rules
-
-### Keep in the repo
-- Python scripts that generate inputs
-- job-management scripts
-- clean template files
-- tiny example inputs
-- documentation and usage notes
-
-### Usually do not keep in the repo
-- large dump files
-- SLURM output logs
-- massive generated `simulations/` trees
-- cluster-specific absolute paths
-- copyrighted or redistribution-restricted files
-
-## Citation
-
-If this workflow helps your work, please cite both the repository and the related paper.
-```
-
----
-
-## 5. Draft GitHub Pages site
-
-GitHub Pages can be very simple. A clean site in `docs/` is enough.
-
-### `docs/_config.yml`
-
-```yaml
-title: "NiCr ITB LAMMPS workflow"
-description: "Template repo for LAMMPS + SLURM research workflows"
-theme: jekyll-theme-cayman
-markdown: kramdown
-```
-
-
-
+.
+├── README.md
+├── docs/
+│   ├── index.md
+│   ├── step1-lattice-constant.md
+│   ├── step2-grid-search.md
+│   ├── step3-eco-single-case.md
+│   ├── why-statistics.md
+│   └── ...
+├── templates/
+│   ├── README.md
+│   ├── in.step1_latticeConst.template
+│   ├── in.gridSearch.template
+│   ├── in.ECO.template
+│   └── run.LAMMPS.template
+├── scripts/
+│   ├── createInput/
+│   ├── autoRun/
+│   └── postProcess/
+├── examples/
+│   ├── step1_latticeConst/
+│   ├── step2_gridSearch/
+│   └── step3_ECO_single_case/
+└── potentials/
