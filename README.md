@@ -2,7 +2,16 @@
 
 This document is a **full starter pack** for turning your local workflow into a clean public GitHub repository and GitHub Pages site.
 
-It is built around the workflow you described:
+## Related paper
+
+This workflow is associated with the following paper:
+
+**Y. Shen and I. J. Beyerlein**,  
+*Temperature-induced migration of Σ3[112] twin boundaries in NiCr alloy*,  
+Journal of Materials Science (2025).  
+[Read the paper here](https://doi.org/10.1007/s10853-025-11276-9)
+
+It is built around the work in :
 
 - `CreateInput` reads templates and writes LAMMPS inputs
 - `autoRun` submits and manages jobs on SLURM
