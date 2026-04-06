@@ -1,50 +1,4 @@
-# GitHub repo starter for your NiCr / LAMMPS workflow
 
-This document is a **full starter pack** for turning your local workflow into a clean public GitHub repository and GitHub Pages site.
-
-## Related paper
-
-This workflow is associated with the following paper:
-
-**Y. Shen and I. J. Beyerlein**,  
-*Temperature-induced migration of Σ3[112] twin boundaries in NiCr alloy*,  
-Journal of Materials Science (2025).  
-[Read the paper here](https://doi.org/10.1007/s10853-025-11276-9)
-
-It is built around the work in :
-
-- `CreateInput` reads templates and writes LAMMPS inputs
-- `autoRun` submits and manages jobs on SLURM
-- `postProcess` extracts results
-- the folder tree reflects a multi-step workflow
-
----
-
-## Workflow
-The workflow is roughly:
-
-### Step 1 — basic reference-property calculations
-Example: lattice constants, equilibrium quantities, maybe SFE inputs.
-
-### Step 2 — rigid-body grid search
-Used to identify low-energy boundary structures.
-
-### Step 3 — build equal-Σ3 boundary models
-Once the preferred structure is known, create the production-ready model.
-
-### Step 4 — ECO migration simulations
-Run temperature / composition / seed-dependent migration simulations.
-
-### Step 5 — post-process outputs
-Extract energies, positions, and migration velocities for analysis and plotting.
-
-That is a strong workflow to share publicly because it shows the **full research pipeline**, not just a single input file.
-
----
-
-## 4. Draft `README.md`
-
-```md
 # NiCr ITB LAMMPS workflow template
 
 This repository is a public-facing template for sharing a LAMMPS workflow built around:
@@ -56,6 +10,7 @@ This repository is a public-facing template for sharing a LAMMPS workflow built 
 It is designed around the workflow used for the NiCr incoherent twin-boundary study reported in:
 
 > Y. Shen and I. J. Beyerlein, *Temperature-induced migration of Σ3[112] twin boundaries in NiCr alloy*, Journal of Materials Science (2025).
+[Read the paper here](https://doi.org/10.1007/s10853-025-11276-9)
 
 ## What this repo is for
 
