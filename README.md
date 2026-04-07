@@ -1,21 +1,25 @@
 # NiCr ITB MD Workflow
 
 This repository shares a LAMMPS-based molecular dynamics (MD) workflow for studying
-incoherent twin boundaries (ITBs), with a particular focus on boundary structure,
-energy, and migration in Ni-based alloys.
+incoherent twin boundaries (ITBs), with a focus on boundary structure, energy, and migration
+in Ni-based alloys.
 
-The repository is organized in two complementary parts:
+The repository is organized in three complementary parts:
 
-1. **Templates and automation**
-   - input templates used by the Python workflow,
-   - scripts that generate many simulation folders,
-   - SLURM-based job submission and monitoring,
-   - post-processing for repeated studies.
+1. **Templates**
+   - LAMMPS input templates,
+   - SLURM run templates,
+   - reusable placeholders filled by Python.
 
 2. **Minimal manual examples**
-   - one small example for each of the four main steps,
+   - one small example for each of the main workflow steps,
    - intended to help a new user understand the physics and file flow
      before using the automated workflow.
+
+3. **Python automation workflow**
+   - scripts that generate many simulation folders and input files,
+   - job-submission scripts for SLURM,
+   - a shared queue-management helper to reduce duplicated logic.
 
 ## Related paper
 
@@ -26,34 +30,31 @@ This workflow is associated with the following paper:
 **Journal of Materials Science** (2025)  
 DOI: [10.1007/s10853-025-11276-9](https://doi.org/10.1007/s10853-025-11276-9)
 
-## Why both templates and examples are useful
+## Why this repository exists
 
-The cleaned templates are useful for automation, but they still contain many variables
-that are normally filled by Python scripts. For a new user, it is much easier to first
-see one small example for each step:
+For alloy/interface migration problems, a single MD simulation is usually not enough
+to characterize the response. The measured migration behavior can depend on:
 
-1. lattice constant calculation,
-2. rigid-body grid search,
-3. restart-based equilibration of one selected Σ3{112} structure,
-4. ECO-driven migration.
+- the local atomic configuration near the boundary,
+- the initial thermal state,
+- the chosen temperature and driving force,
+- the boundary structure used as the starting point.
 
-For that reason, this repository keeps **both**:
-
-- `templates/` for the scalable workflow,
-- `examples/` for tutorial-style manual understanding.
+For that reason, this repository is designed not only to show how to run one example,
+but also how to automate repeated simulations and organize the results for statistical analysis.
 
 ## Recommended order for new users
 
 If you are new to this workflow, I recommend following this order:
 
-1. Run or read the **Step 1** lattice constant example.
-2. Read the **Step 2** grid-search example and parameter notes.
+1. Read or run the **Step 1** lattice constant example manually.
+2. Read the **Step 2** grid-search example and understand the geometry variables.
 3. Read the **Step 3** equilibration example and understand the restart handoff.
 4. Read the **Step 4** ECO example and understand what outputs are dumped.
-5. Then move to the Python automation workflow.
+5. Then read the **Python workflow** section and use the automation scripts.
 
-This order helps users understand the physical meaning and file dependencies of each step
-before using the automated scripts.
+This order helps users first understand the physical meaning and file dependencies of each calculation step
+before using the automated workflow.
 
 ## Repository structure
 
@@ -66,42 +67,52 @@ before using the automated scripts.
 │   ├── step2-grid-search.md
 │   ├── step3-eco-single-case.md
 │   ├── step4-basic-postprocess.md
-│   └── why-statistics.md
+│   ├── why-statistics.md
+│   └── python-workflow.md
 ├── templates/
 ├── examples/
-│   ├── step1_latticeConst/
-│   ├── step2_gridSearch/
-│   ├── step3_equilibrate/
-│   └── step4_eco/
 ├── scripts/
 │   ├── createInput/
-│   ├── autoRun/
-│   └── postProcess/
+│   │   ├── Step1_latticeConst.py
+│   │   ├── Step2_GridSearch.py
+│   │   ├── Step3_EqSigma3_112.py
+│   │   └── Step4_ECOSigma3_112.py
+│   └── autoRun/
+│       ├── job_runner.py
+│       ├── autoRun_Step1_LC.py
+│       ├── autoRun_Step2_GridSearch.py
+│       ├── autoRun_Step3_Eq.py
+│       └── autoRun_Step4_ECO_112.py
 └── potentials/
 ```
 
-## Example folders
+## Python workflow section
 
-### `examples/step1_latticeConst/`
-Contains one concrete bulk-alloy example input showing how the lattice constant
-calculation is run manually.
+The Python workflow is split into two parts:
 
-### `examples/step2_gridSearch/`
-Contains notes for one representative Σ3{112} grid-search case, including the
-main variables that must be specified before the template is run.
+### `scripts/createInput/`
+These scripts read text templates and generate organized simulation folders,
+LAMMPS input files, and SLURM job scripts.
 
-### `examples/step3_equilibrate/`
-Shows how the restart from the selected boundary structure is re-equilibrated
-and heated to the target temperature.
+### `scripts/autoRun/`
+These scripts submit and monitor many jobs on a SLURM cluster. A shared helper
+module (`job_runner.py`) is used so that queue polling, submission, and resubmission
+logic do not have to be repeated in every script.
 
-### `examples/step4_eco/`
-Shows how the equilibrated restart is used for the ECO-driven migration run.
+For details, see:
 
-## Important note about the examples
+- `docs/python-workflow.md`
 
-The examples are intentionally minimal. Their purpose is to document the workflow,
-file handoff, and key variables. For production studies, users should still rely on
-the Python automation framework to generate consistent families of cases.
+## Why both templates and examples are useful
+
+The cleaned templates are useful for automation, but they still contain many variables
+that are normally filled by Python scripts. For a new user, it is much easier to first
+see one small example for each step.
+
+For that reason, this repository keeps **both**:
+
+- `templates/` for the scalable workflow,
+- `examples/` for tutorial-style manual understanding.
 
 ## Notes on public sharing
 
@@ -114,8 +125,8 @@ In general, the repository should include:
 - example inputs,
 - documentation.
 
-Large outputs, temporary files, and cluster-specific raw results are usually better
-kept out of the public repository.
+Large outputs, temporary files, and cluster-specific raw results are usually better kept out
+of the public repository.
 
 ## Citation
 
