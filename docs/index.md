@@ -5,9 +5,12 @@ title: NiCr ITB MD Workflow
 
 # NiCr ITB MD Workflow
 
-This site documents a LAMMPS-based molecular dynamics workflow for studying
-incoherent twin boundaries (ITBs), with a particular focus on boundary structure,
-energy, and migration in Ni-based alloys.
+This site documents a four-step molecular dynamics workflow for studying
+incoherent twin boundaries (ITBs) in Ni-based alloys.
+
+The example inputs in this repository are lightly cleaned versions of the
+original research templates. The main change is that private absolute paths
+have been replaced by reusable placeholders such as `${potential_file}`.
 
 ## Related paper
 
@@ -16,47 +19,45 @@ energy, and migration in Ni-based alloys.
 **Journal of Materials Science** (2025)  
 DOI: [10.1007/s10853-025-11276-9](https://doi.org/10.1007/s10853-025-11276-9)
 
-## How this site is organized
-
-This documentation is divided into two parts:
-
-### 1. Tutorial / manual examples
-These pages introduce each main calculation step in a transparent way before
-moving to automation:
-
-- [Step 1: Lattice constant calculation](step1-lattice-constant.md)
-- [Step 2: Rigid-body grid search](step2-grid-search.md)
-- [Step 3: ECO single-case migration](step3-eco-single-case.md)
-- [Step 4: Basic post-processing](step4-basic-postprocess.md)
-
-### 2. Statistical workflow and automation
-These pages explain why repeated MD simulations are needed and how the Python
-workflow is used to scale up from one example to many production runs:
-
-- [Why repeated simulations are needed](why-statistics.md)
-
 ## Recommended order for new users
 
-If you are new to this repository, I recommend following this order:
+1. [Step 1: Lattice constant calculation](step1-lattice-constant.md)
+2. [Step 2: Rigid-body grid search](step2-grid-search.md)
+3. [Step 3: Build and equilibrate one Σ3{112} ITB model](step3-eco-single-case.md)
+4. [Step 4: ECO-driven migration run and basic interpretation](step4-basic-postprocess.md)
+5. [Why repeated simulations are needed](why-statistics.md)
 
-1. Read **Step 1: Lattice constant calculation**
-2. Read **Step 2: Rigid-body grid search**
-3. Read **Step 3: ECO single-case migration**
-4. Read **Step 4: Basic post-processing**
-5. Then read **Why repeated simulations are needed**
+## What the four steps do
 
-This order helps users first understand the physical meaning of each calculation
-step before using the automated workflow.
+### Step 1 — Lattice constant calculation
+Runs a bulk alloy calculation with minimization, NPT equilibration, and
+time-averaging of `lx`, `ly`, and `lz` into `lattice_constant.dat`.
 
-## What this repository provides
+### Step 2 — Rigid-body grid search
+Builds a three-region bicrystal, applies rigid-body translations, deletes
+overlaps, minimizes the structure, and reports grain-boundary energy.
 
-- tutorial-style manual examples,
-- templates for LAMMPS input generation,
-- Python scripts for automated input creation,
-- job submission logic for SLURM-based clusters,
-- a structure for post-processing repeated simulations.
+### Step 3 — Restart-based equilibration of the selected Σ3{112} ITB
+Reads the restart from the previous step, minimizes again, ramps the
+temperature from `Tstart` to `Tend`, and writes a new restart for ECO.
 
-## What this repository does not try to provide
+### Step 4 — ECO-driven migration
+Reads the equilibrated restart, applies `fix orient/eco`, and dumps
+boundary-driving-force information through `f_gb[1]` and `f_gb[2]`.
 
-This site is not meant to store all raw outputs from large production runs.
-Instead, it focuses on sharing the workflow in a reusable and understandable form.
+## Example templates included
+
+- `templates/in.Step1_latticeConst_example.in`
+- `templates/in.Step2_GridSearch_example.in`
+- `templates/in.Step3_EqSigma3_112TB_example.in`
+- `templates/in.Step4_ECO_example.in`
+
+## Important note
+
+These files are intentionally kept close to the originals. That makes them
+good teaching examples, but it also means users should still check:
+
+- potential-file compatibility,
+- element ordering in `pair_coeff`,
+- variable definitions passed in from Python or the command line,
+- simulation cell dimensions and orientation choices.

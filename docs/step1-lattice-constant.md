@@ -5,94 +5,74 @@ title: Step 1 - Lattice constant calculation
 
 # Step 1 — Lattice constant calculation
 
-## Goal
+## What this file does
 
-The goal of this step is to determine the lattice constant used to build the
-initial structure for later calculations.
+The example input for this step is:
+
+- `templates/in.Step1_latticeConst_example.in`
+
+This file creates a bulk FCC alloy box, randomly assigns a fraction of atoms to
+type 2 using:
+
+```lammps
+set type 1 type/fraction 2 ${NiFrac} ${seed}
+```
+
+and then performs:
+
+1. energy minimization with `fix box/relax iso 0.0`,
+2. NPT equilibration at `${Tend}`,
+3. time averaging of `lx`, `ly`, and `lz` into `lattice_constant.dat`.
 
 ## Why this step matters
 
-Before running boundary energy or migration calculations, the model should be
-built using a physically consistent lattice constant for the chosen potential,
-composition, and temperature.
+Later steps build bicrystal and boundary structures using a lattice constant.
+If the lattice constant is inconsistent with the potential, composition, or
+temperature, artificial strain can be introduced into the model.
 
-Using an inappropriate lattice constant can introduce artificial strain into
-the initial structure, which can then affect the measured boundary structure,
-boundary energy, and migration response.
+## Main variables in this template
 
-## What this example shows
+This template expects at least:
 
-In this tutorial example, one lattice constant calculation is run manually,
-without using the automated Python workflow.
+- `${NiFrac}` — alloy fraction used in the `set type/fraction` command
+- `${seed}` — random seed for alloy assignment
+- `${Tend}` — target equilibration temperature
+- `${potential_file}` — path to the potential file
 
-This example is meant to help users understand:
+## Minimal example run
 
-- the structure of the LAMMPS input,
-- what quantities are being relaxed or measured,
-- what output to inspect,
-- what value will be passed into later steps.
-
-## Typical input ingredients
-
-A typical lattice constant calculation includes:
-
-- definition of the crystal structure,
-- specification of the alloy composition,
-- definition of the interatomic potential,
-- energy minimization or finite-temperature equilibration,
-- extraction of the relaxed box size or lattice parameter.
-
-## Example files
-
-A minimal example may include files such as:
-
-- `examples/step1_latticeConst/in.example`
-- `templates/in.step1_latticeConst.template`
-- `templates/run.LAMMPS.template`
-
-## How to run manually
-
-For a direct run:
+If you want to run this file manually, you would typically pass the variables
+from the command line, for example:
 
 ```bash
-lmp -in in.example
+lmp -in in.Step1_latticeConst_example.in \
+    -var NiFrac 0.9 \
+    -var seed 12345 \
+    -var Tend 800 \
+    -var potential_file potentials/FeNiCr_ArturV3.eam
 ```
 
-For a batch system:
+## What to inspect
 
-```bash
-sbatch run.LAMMPS
-```
+This step writes several outputs that are useful for checking the calculation:
 
-## What output to check
-
-Common places to inspect the result include:
-
+- `dump.afterCreate`
+- `dump.afterMini`
 - `log.lammps`
-- a dedicated output file such as `lattice_constant.dat`
-- thermo output printed during the run
+- `lattice_constant.dat`
 
-## How to interpret the result
+The most important one is `lattice_constant.dat`, which stores time-averaged
+box lengths during the data-collection stage.
 
-At the end of this step, the user should obtain a lattice constant that is
-consistent with:
+## How to use the result
 
-- the selected potential,
-- the selected composition,
-- the selected temperature or equilibration condition.
+From `lattice_constant.dat`, you can extract an average box length and convert
+it to the effective lattice constant for the chosen structure size. That value
+is then passed into the structure-building stage of Step 2.
 
-This value is then used to construct later simulation cells more consistently.
+## Common pitfalls
 
-## Common mistakes
-
-Common mistakes in this step include:
-
-- using the wrong potential file,
-- using the wrong element ordering in `pair_coeff`,
-- mixing lattice constants from different potentials,
-- using one lattice constant for all temperatures without checking.
-
-## Suggested next step
-
-After the lattice constant is determined, proceed to the rigid-body grid search
-used to identify a low-energy boundary structure.
+- forgetting to pass `${potential_file}`
+- using the wrong element order in `pair_coeff`
+- reusing a lattice constant from a different potential or temperature
+- treating one short equilibration as a final converged value

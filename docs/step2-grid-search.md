@@ -5,79 +5,109 @@ title: Step 2 - Rigid-body grid search
 
 # Step 2 — Rigid-body grid search
 
-## Goal
+## What this file does
 
-The goal of this step is to identify a physically reasonable low-energy
-boundary structure before running migration calculations.
+The example input for this step is:
+
+- `templates/in.Step2_GridSearch_example.in`
+
+This file builds a three-region bicrystal model (`g21`, `g1`, and `g22`) using
+orientation matrices passed in through variables. It then:
+
+1. assigns alloy composition,
+2. applies rigid-body displacement to region `g1`,
+3. deletes overlapping atoms,
+4. minimizes the structure,
+5. relaxes the box,
+6. computes grain-boundary energy,
+7. writes a restart for the selected structure.
 
 ## Why this step matters
 
-Boundary structure strongly affects:
+The boundary structure used in later mobility calculations should not be chosen
+arbitrarily. This template is meant to be used repeatedly with different
+rigid-body translations such as `${disX}`, `${disY0}`, and `${disZ}` so that
+different candidate structures can be compared.
 
-- boundary energy,
-- local atomic arrangement,
-- defect content near the interface,
-- later migration behavior.
+## Main variables in this template
 
-For this reason, it is important to avoid starting from an arbitrary boundary
-translation or poorly chosen interface structure.
+This file depends on many geometry variables. The most important groups are:
 
-## What this example shows
+### Cell and region geometry
+- `${latticeConst}`
+- `${xp0}`, `${xp1}`
+- `${yp00}`, `${yp55}`
+- `${yp0}` through `${yp5}`
+- `${zp0}`, `${zp1}`
 
-In this tutorial example, one rigid-body grid search is performed manually
-for a selected boundary type.
+### Orientation matrices
+- `${xx1}` ... `${zz1}`
+- `${xx2}` ... `${zz2}`
 
-The purpose is to show:
+### Grid-search and chemistry variables
+- `${NiFrac}`
+- `${seed}`
+- `${disX}`, `${disY0}`, `${disZ}`
+- `${cutOff}`
+- `${pEnergy}`
 
-- what parameter is being varied,
-- how multiple trial structures are generated,
-- how energy is compared across candidate structures,
-- how a preferred low-energy structure is selected.
+### Labels used in output files
+- `${boundary_type}`
+- `${component}`
 
-## Typical idea of a grid search
+### Potential files
+- `${potential_alloy}`
+- `${potential_fs}`
 
-A rigid-body grid search usually works by:
+## Minimal example run
 
-1. constructing the two grains,
-2. applying relative rigid-body translations between them,
-3. relaxing each trial configuration,
-4. comparing the resulting energies.
+A manual run would usually look like:
 
-The lowest-energy or physically preferred structure is then used for later
-production calculations.
+```bash
+lmp -in in.Step2_GridSearch_example.in \
+    -var latticeConst 3.538 \
+    -var NiFrac 0.9 \
+    -var seed 12345 \
+    -var disX 0.0 \
+    -var disY0 0.0 \
+    -var disZ 0.0 \
+    -var cutOff 0.35 \
+    -var pEnergy -4.244136667 \
+    -var boundary_type sig3_112 \
+    -var component NiCr \
+    -var potential_alloy potentials/FeCrNi_d.eam.alloy \
+    -var potential_fs potentials/FeCrNi_s.eam.fs
+```
 
-## Example files
+In practice, the geometry and orientation variables are normally supplied by a
+Python generation script.
 
-A minimal example may include:
+## How the boundary energy is computed
 
-- `examples/step2_gridSearch/in.example`
-- `templates/in.gridSearch.template`
-- one small table or output summary of trial energies
+The script computes total atomic energy through:
 
-## What output to check
+```lammps
+compute eng all pe/atom
+compute eatoms all reduce sum c_eng
+```
 
-The user should examine:
+and then evaluates grain-boundary energy with:
 
-- total energy or boundary energy for each trial,
-- whether the structure relaxes cleanly,
-- whether the selected minimum looks physically reasonable.
+```lammps
+variable gbe equal "(c_eatoms - (v_minimumenergy * count(all)))/v_gbarea"
+variable gbemJm2 equal ${gbe}*16021.7733
+```
 
-## Why this step is especially important
+This makes the template useful for scanning candidate structures and ranking
+them by boundary energy.
 
-For interface migration studies, the measured response can depend strongly on
-the initial boundary structure. A grid search helps reduce bias from an
-unphysical or high-energy starting configuration.
+## Important outputs
 
-## Common mistakes
+- `dump.minimized_${boundary_type}_${component}`
+- `restart.al_${boundary_type}_${component}`
+- printed grain-boundary energy in mJ/m²
 
-Common mistakes include:
+## What to do next
 
-- comparing structures that were not relaxed consistently,
-- choosing a configuration only by visual appearance,
-- using too coarse a translation grid,
-- failing to document which translation produced the chosen structure.
-
-## Suggested next step
-
-Once a low-energy structure has been selected, proceed to a single ECO-driven
-migration example.
+Once a low-energy translation state is selected, its restart file becomes the
+starting point for Step 3.

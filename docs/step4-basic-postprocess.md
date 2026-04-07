@@ -1,75 +1,85 @@
 ---
 layout: default
-title: Step 4 - Basic post-processing
+title: Step 4 - ECO-driven migration run and basic interpretation
 ---
 
-# Step 4 — Basic post-processing
+# Step 4 — ECO-driven migration run and basic interpretation
 
-## Goal
+## What this file does
 
-The goal of this step is to inspect the output from one migration simulation and
-extract the quantities needed for interpretation.
+The example input for this step is:
+
+- `templates/in.Step4_ECO_example.in`
+
+This file reads the equilibrated restart from Step 3, performs a short NPT
+equilibration at the target temperature, and then applies the ECO driving force
+through:
+
+```lammps
+fix gb all orient/eco ${eco_df} 0.25 ${cut_off} ${oriFile}
+```
+
+It then runs the production migration simulation while dumping two quantities
+from `fix gb`:
+
+- `f_gb[1]`
+- `f_gb[2]`
 
 ## Why this step matters
 
-A simulation is not useful unless the output can be converted into meaningful
-quantities such as:
+This is the actual driven-migration stage of the workflow. Earlier steps prepare
+the structure and the temperature state; this step is where boundary motion is
+measured.
 
-- boundary energy,
-- boundary position,
-- migration distance,
-- migration velocity,
-- comparison across conditions.
+## Main variables in this template
 
-## What this example shows
+- `${restart_file}` — restart from Step 3
+- `${potential_file}` — path to the potential file
+- `${Tend}` — target temperature
+- `${eco_df}` — ECO driving-force magnitude
+- `${cut_off}` — orientational cutoff distance
+- `${oriFile}` — file used by `fix orient/eco`
+- `${total_steps}` — total production run length
 
-This tutorial page focuses on the logic of post-processing one case manually.
+## Minimal example run
 
-The main objectives are to show:
+```bash
+lmp -in in.Step4_ECO_example.in \
+    -var restart_file restart.NiCr_0.9_sig3_112_regular_comp0_800K \
+    -var potential_file potentials/FeNiCr_ArturV3.eam \
+    -var Tend 800 \
+    -var eco_df 0.025 \
+    -var cut_off 3.9 \
+    -var oriFile orient_file.dat \
+    -var total_steps 100000
+```
 
-- which output files matter,
-- how to locate the boundary in the saved data,
-- how to convert boundary position versus time into migration velocity,
-- what kind of plots or tables are useful.
+## Important outputs
 
-## Typical outputs to inspect
-
-Depending on the workflow, these may include:
-
+- `dump.ECODF_${Tend}`
 - `log.lammps`
-- dump or trajectory files
-- intermediate text files written during the run
-- processed CSV or text summaries
 
-## Common measurements
+The dump file includes:
 
-Typical measurements in this step include:
+```lammps
+id type x y z f_gb[1] f_gb[2]
+```
 
-### Boundary position
-Determine the interface location as a function of time.
+which means it stores both structural coordinates and ECO-related per-atom
+quantities for later analysis.
 
-### Migration distance
-Convert position changes into total displacement.
+## How this connects to post-processing
 
-### Migration velocity
-Estimate velocity from the slope of position versus time, possibly after
-excluding transient or noisy segments.
+A basic post-processing workflow usually extracts:
 
-## Why this step is useful before automation
+- boundary position versus time
+- total migration distance
+- average migration velocity
+- qualitative migration mode from the snapshots
 
-Manual post-processing of one case helps users understand what the automated
-post-processing scripts are actually doing and what assumptions they rely on.
+## Common pitfalls
 
-## Common mistakes
-
-Common mistakes include:
-
-- measuring the wrong interface,
-- mixing two boundaries in one cell,
-- fitting noisy data without checking the trajectory,
-- treating a single realization as a final statistical result.
-
-## Suggested next step
-
-After understanding one case manually, read the page on why repeated
-simulations are needed for statistical studies.
+- using the wrong restart file from Step 3
+- not checking that `oriFile` is present and compatible with the system
+- using an ECO driving force that is too small to measure or too large to remain physical
+- forgetting that one ECO trajectory is only one realization, not a full statistical result

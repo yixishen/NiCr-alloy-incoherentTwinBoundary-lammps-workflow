@@ -1,70 +1,85 @@
 ---
 layout: default
-title: Step 3 - ECO single-case migration
+title: Step 3 - Build and equilibrate one Σ3{112} ITB model
 ---
 
-# Step 3 — ECO single-case migration
+# Step 3 — Build and equilibrate one Σ3{112} ITB model
 
-## Goal
+## What this file does
 
-The goal of this step is to run one manual migration simulation for a selected
-boundary structure using the ECO-based driving-force setup.
+The example input for this step is:
+
+- `templates/in.Step3_EqSigma3_112TB_example.in`
+
+This file reads a restart generated in Step 2 and prepares it for the ECO run.
+It performs:
+
+1. `read_restart ${restart_file}`
+2. another minimization,
+3. box relaxation with `fix box/relax x 0.0 y 0.0 z 0.0`
+4. gradual heating from `Tstart` to `Tend`
+5. final NPT equilibration at `${Tend}`
+6. writing of a new restart for Step 4
 
 ## Why this step matters
 
-Before moving to automated large-scale studies, it is useful to understand one
-single case in detail:
+The output of the grid search is a low-energy geometric structure, but Step 4
+needs a thermally equilibrated model at the target temperature. This step
+bridges those two requirements.
 
-- how the input is built,
-- how the driving force is introduced,
-- what the trajectory looks like,
-- how migration is measured from the output.
+## Main variables in this template
 
-## What this example shows
+- `${restart_file}` — restart written in Step 2
+- `${potential_file}` — path to the potential file
+- `${Tend}` — target temperature
+- `${modelNum}` — label used in dump names
+- `${seed}` — velocity seed
+- `${Tstep}` — temperature increment used in the heating loop
+- `${Comp}`, `${NiFrac}`, `${size}`, `${comp_index}` — labels used in the restart filename
 
-This example demonstrates one boundary type, one composition, one temperature,
-and one manual ECO-driven migration case.
+## Heating logic in this file
 
-The user should learn:
+The template uses:
 
-- the layout of the migration input file,
-- how the selected low-energy structure is reused,
-- what parameters control the run,
-- how the moving boundary is monitored.
+```lammps
+variable step loop 160
+variable T equal ${Tstart}+${step}*${Tstep}
+```
 
-## Typical input ingredients
+and repeatedly applies NPT for 2000 steps per increment until the target
+temperature is reached. After that, it performs a longer equilibration run of
+30000 steps at `${Tend}`.
 
-A typical ECO migration case may include:
+## Minimal example run
 
-- the selected minimized boundary structure,
-- equilibration at the target temperature,
-- definition of the orientational driving-force setup,
-- output of structural snapshots and thermodynamic quantities.
+```bash
+lmp -in in.Step3_EqSigma3_112TB_example.in \
+    -var restart_file restart.al_sig3_112_NiCr \
+    -var potential_file potentials/FeNiCr_ArturV3.eam \
+    -var Tend 800 \
+    -var modelNum 0 \
+    -var seed 12345 \
+    -var Tstep 5 \
+    -var Comp NiCr \
+    -var NiFrac 0.9 \
+    -var size regular \
+    -var comp_index 0
+```
 
-## What to look for in the output
+## Important outputs
 
-Useful quantities to monitor include:
+- `dump.afterRestart_${Tend}_${modelNum}`
+- `dump.equilibration_${Tend}_${modelNum}`
+- `restart.${Comp}_${NiFrac}_sig3_112_${size}_comp${comp_index}_${Tend}K`
 
-- whether the boundary remains stable,
-- whether migration is observable,
-- the boundary position as a function of time,
-- whether the motion appears smooth, jerky, or stepwise.
+## Important note
 
-## Why manual understanding comes first
+The original template uses:
 
-A single manual example helps users understand the physical meaning of the run
-before automation hides the details behind loops and templates.
+```lammps
+pair_coeff * * ${potential_file} Fe Ni
+```
 
-## Common mistakes
-
-Common mistakes include:
-
-- using a structure that was not prepared consistently,
-- mixing boundary types or directions unintentionally,
-- choosing a temperature or driving force that produces no measurable motion,
-- failing to save outputs needed for later velocity analysis.
-
-## Suggested next step
-
-Once one manual ECO case is understood, the next step is to inspect the output
-and extract quantities such as position and migration velocity.
+This example keeps that mapping unchanged to stay close to the source file.
+Before production use, verify that the element order matches your actual
+potential file and atom-type convention.
