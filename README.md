@@ -4,7 +4,7 @@ This repository shares a LAMMPS-based molecular dynamics (MD) workflow for study
 incoherent twin boundaries (ITBs), with a focus on boundary structure, energy, and migration
 in Ni-based alloys.
 
-The repository is organized in three complementary parts:
+The repository is organized in four complementary parts:
 
 1. **Templates**
    - LAMMPS input templates,
@@ -13,13 +13,15 @@ The repository is organized in three complementary parts:
 
 2. **Minimal manual examples**
    - one small example for each of the main workflow steps,
-   - intended to help a new user understand the physics and file flow
-     before using the automated workflow.
+   - intended to help a new user understand the physics and file flow before using the automated workflow.
 
 3. **Python automation workflow**
-   - scripts that generate many simulation folders and input files,
-   - job-submission scripts for SLURM,
-   - a shared queue-management helper to reduce duplicated logic.
+   - `scripts/createInput/` generates simulation folders and input files,
+   - `scripts/autoRun/` submits and monitors jobs on a SLURM cluster.
+
+4. **Post-processing**
+   - `scripts/postProcess/` extracts lattice constants, grid-search boundary energies,
+     and ECO migration trajectories from the generated outputs.
 
 ## Related paper
 
@@ -51,12 +53,19 @@ If you are new to this workflow, I recommend following this order:
 2. Read the **Step 2** grid-search example and understand the geometry variables.
 3. Read the **Step 3** equilibration example and understand the restart handoff.
 4. Read the **Step 4** ECO example and understand what outputs are dumped.
-5. Then read the **Python workflow** section and use the automation scripts.
+5. Then read the **Python workflow** and **Post-processing** sections.
 
 This order helps users first understand the physical meaning and file dependencies of each calculation step
 before using the automated workflow.
 
-## Repository structure
+## Suggested / required directory structure
+
+The directory structure is not just for convenience. It is part of the workflow itself.
+
+The `createInput`, `autoRun`, and `postProcess` scripts all assume specific folder names
+for temperatures, model indices, compositions, and restart handoff between steps.
+That means the structure below is strongly recommended, and in practice should be treated
+as the required structure unless you also edit the Python scripts.
 
 ```text
 .
@@ -68,55 +77,78 @@ before using the automated workflow.
 │   ├── step3-eco-single-case.md
 │   ├── step4-basic-postprocess.md
 │   ├── why-statistics.md
-│   └── python-workflow.md
+│   ├── python-workflow.md
+│   ├── postprocess.md
+│   └── directory-structure.md
 ├── templates/
 ├── examples/
-│   ├── step1_latticeConst/
-│   ├── step2_gridSearch/
-│   ├── step3_equilibrate/
-│   └── step4_eco/
 ├── scripts/
 │   ├── createInput/
-│   │   ├── Step1_latticeConst.py
-│   │   ├── Step2_GridSearch.py
-│   │   ├── Step3_EqSigma3_112.py
-│   │   └── Step4_ECOSigma3_112.py
-│   └── autoRun/
-│       ├── job_runner.py
-│       ├── autoRun_Step1_LC.py
-│       ├── autoRun_Step2_GridSearch.py
-│       ├── autoRun_Step3_Eq.py
-│       └── autoRun_Step4_ECO_112.py
+│   ├── autoRun/
+│   └── postProcess/
+├── simulations/
+│   ├── Step1_latticeConst/
+│   ├── Step2_GridSearch/
+│   ├── Step3_EqSigma3_112/
+│   └── Step4_ECO_112/
+├── results/
+│   └── postProcess/
 └── potentials/
 ```
 
+### Step-specific simulation layout
+
+```text
+simulations/
+├── Step1_latticeConst/<potential>/<component>/<ni_fraction>/Step1_latticeConst_<T>/<model_index>/
+├── Step2_GridSearch/<component>/<boundary_type>/<potential>/<ni_fraction>/<size_label>/config<k>/<cutoff>_<dx>_<dy>_<dz>/
+├── Step3_EqSigma3_112/<potential>/<ni_fraction>/<size_label>/comp<k>/Step3_EqSigma3_<T>/<model_index>/
+└── Step4_ECO_112/<potential>/<ni_fraction>/<eco_df>/<size_label>/comp<k>/Step4_ECOS3_112_<eco_df>_<T>/<model_index>/
+```
+
+### Why this matters
+
+- Step 3 needs restart files written by Step 2.
+- Step 4 needs restart files written by Step 3.
+- The post-processing scripts search for files using these directory names.
+- If you rename the folders, you must update the scripts accordingly.
+
 ## Python workflow section
 
-The Python workflow is split into two parts:
+The Python workflow is split into three parts:
 
 ### `scripts/createInput/`
-These scripts read text templates and generate organized simulation folders,
-LAMMPS input files, and SLURM job scripts.
+These scripts read text templates and write case folders, LAMMPS inputs, and SLURM scripts.
 
 ### `scripts/autoRun/`
-These scripts submit and monitor many jobs on a SLURM cluster. A shared helper
-module (`job_runner.py`) is used so that queue polling, submission, and resubmission
-logic do not have to be repeated in every script.
+These scripts submit and monitor jobs on a SLURM cluster.
+
+### `scripts/postProcess/`
+These scripts summarize the outputs:
+
+- `latticeConst.py` for Step 1 lattice-constant results,
+- `GridSearch_GBenergy.py` for Step 2 grid-search energies,
+- `extractGBmigration_timestep.py` for Step 4 ECO trajectory analysis.
+
+## Post-processing section
+
+The post-processing scripts assume the simulation folders already exist and follow the expected layout.
+
+### Step 1 post-processing
+Reads `lattice_constant.dat` files from Step 1 directories and writes summary CSV/Excel tables.
+
+### Step 2 post-processing
+Searches recursively for `log.lammps` files, extracts the last reported GB energy, and writes a summary table.
+
+### Step 4 post-processing
+Reads ECO dump files, identifies the two grain boundaries from `f_gb[2]`, writes a GB-only dump,
+and exports boundary positions and migration distances.
 
 For details, see:
 
+- `docs/postprocess.md`
+- `docs/directory-structure.md`
 - `docs/python-workflow.md`
-
-## Why both templates and examples are useful
-
-The cleaned templates are useful for automation, but they still contain many variables
-that are normally filled by Python scripts. For a new user, it is much easier to first
-see one small example for each step.
-
-For that reason, this repository keeps **both**:
-
-- `templates/` for the scalable workflow,
-- `examples/` for tutorial-style manual understanding.
 
 ## Notes on public sharing
 
