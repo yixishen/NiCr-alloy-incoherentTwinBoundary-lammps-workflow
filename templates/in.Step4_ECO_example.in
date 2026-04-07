@@ -1,0 +1,30 @@
+# Public example version of Step 4:
+# - private absolute paths removed
+# - ECO driving-force workflow preserved
+
+# ---------- Resume Simulation from Restart File ----------
+read_restart ${restart_file}
+
+# ---------- Define Interatomic Potential ---------------------
+# Replace ${potential_file} with the path to your potential file
+# NOTE: the element ordering below is preserved from the original template.
+# Verify that it matches your own potential-file convention before production use.
+pair_style eam/alloy
+pair_coeff * * ${potential_file} Fe Ni
+
+# ---------- Short equilibration at target temperature ----------
+reset_timestep 0
+fix 1 all npt temp ${Tend} ${Tend} 0.1 x 0.0 0.0 1.0 y 0.0 0.0 1.0 z 0.0 0.0 1.0
+run 5000
+unfix 1
+
+# ---------- ECO-driven migration run ----------
+reset_timestep 0
+thermo 10
+thermo_style custom step temp pe lx ly lz press pxx pyy pzz
+
+fix gb all orient/eco ${eco_df} 0.25 ${cut_off} ${oriFile}
+fix 1 all npt temp ${Tend} ${Tend} 0.1 x 0.0 0.0 1.0 y 0.0 0.0 1.0 z 0.0 0.0 1.0
+
+dump ECODF all custom 1000 dump.ECODF_${Tend} id type x y z f_gb[1] f_gb[2]
+run ${total_steps}

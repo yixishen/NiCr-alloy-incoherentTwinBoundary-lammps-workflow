@@ -1,0 +1,72 @@
+# Public example version of Step 3:
+# - private absolute paths removed
+# - restart-driven workflow preserved
+
+# Define initial temperature
+variable Tstart equal 0.0
+
+# ---------- Initialize Simulation from Restart File ----------
+read_restart ${restart_file}
+reset_timestep 0
+
+# ---------- Define Interatomic Potential ---------------------
+# Replace ${potential_file} with the path to your potential file
+# NOTE: the element ordering below is preserved from the original template.
+# Verify that it matches your own potential-file convention before production use.
+pair_style eam/alloy
+pair_coeff * * ${potential_file} Fe Ni
+
+neighbor 2.0 bin
+neigh_modify delay 10 check yes
+
+dump afcreate all custom 100 dump.afterRestart_${Tend}_${modelNum} id type x y z
+run 0
+undump afcreate
+
+# ---------- Minimization ---------------------
+reset_timestep 0
+thermo 100
+thermo_style custom step pe lx ly lz press pxx pyy pzz
+
+min_style cg
+minimize 1e-12 1e-12 10000 10000
+
+# ---------- Box Relaxation Minimization ---------------------
+reset_timestep 0
+thermo 10
+thermo_style custom step pe temp lx ly lz press pxx pyy pzz
+fix 1 all box/relax x 0.0 y 0.0 z 0.0 vmax 0.01
+min_style cg
+minimize 1e-12 1e-12 10000 10000
+unfix 1
+
+# ---------- Heating and Equilibration ---------------------
+reset_timestep 0
+timestep 0.001
+velocity all create 5 ${seed}
+
+# Increment temperature from Tstart to Tend using Tstep
+variable step loop 160
+label loop_temperature
+variable T equal ${Tstart}+${step}*${Tstep}
+
+if "${T} > ${Tend}" then "jump SELF end_loop"
+
+fix 1 all npt temp ${T} ${T} 0.1 x 0.0 0.0 1.0 y 0.0 0.0 1.0 z 0.0 0.0 1.0
+run 2000
+unfix 1
+
+next step
+jump SELF loop_temperature
+
+label end_loop
+
+fix 1 all npt temp ${Tend} ${Tend} 0.1 x 0.0 0.0 1.0 y 0.0 0.0 1.0 z 0.0 0.0 1.0
+run 30000
+unfix 1
+
+dump equil all custom 100 dump.equilibration_${Tend}_${modelNum} id type x y z
+run 0
+undump equil
+
+write_restart restart.${Comp}_${NiFrac}_sig3_112_${size}_comp${comp_index}_${Tend}K

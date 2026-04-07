@@ -1,0 +1,76 @@
+# LAMMPS Script to Calculate the Lattice Constant of FCC NiCr Alloy
+# Public example version:
+# - private absolute paths removed
+# - physics and variable structure kept unchanged
+
+# ---------- Initialize Simulation ---------------------
+units           metal
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+# ---------- Create Atomistic Structure ----------------
+
+lattice         fcc 3.52
+region          whole block 0 20 0 20 0 20 units lattice
+create_box      2 whole
+create_atoms    1 box
+
+# Randomly convert a fraction of type 1 atoms to type 2
+# Example: use -var NiFrac 0.9 for a Ni90Cr-like composition mapping
+set            type 1 type/fraction 2 ${NiFrac} ${seed}
+
+# ---------- Define Interatomic Potential --------------
+# Replace ${potential_file} with the path to your potential file
+pair_style eam/alloy
+pair_coeff * * ${potential_file} Cr Ni
+
+# ---------- Define Settings ---------------------------
+
+dump    1 all custom 1000 dump.afterCreate id type x y z
+run 0
+undump 1
+
+neighbor        2.0 bin
+neigh_modify    delay 10
+
+# ---------- Energy Minimization -----------------------
+
+fix             0 all box/relax iso 0.0 vmax 0.001
+min_style       cg
+minimize        1.0e-12 1.0e-12 2000 10000
+unfix           0
+
+# ---------- Equilibration -----------------------------
+
+reset_timestep  0
+variable        P equal 0.0
+
+thermo          1000
+thermo_style    custom step temp press pe lx ly lz pxx pyy pzz
+
+timestep 0.001
+velocity all create ${Tend} 634534
+
+fix 1 all npt temp ${Tend} ${Tend} 0.1 iso 0.0 0.0 1.0
+run 50000
+
+# ---------- Data Collection ---------------------------
+
+unfix 1
+fix 2 all npt temp ${Tend} ${Tend} 0.1 iso 0.0 0.0 0.1
+
+reset_timestep  0
+variable        lx equal lx
+variable        ly equal ly
+variable        lz equal lz
+
+fix 3 all ave/time 1 10000 10000 v_lx v_ly v_lz file lattice_constant.dat
+run 50000
+
+dump    1 all custom 1000 dump.afterMini id type x y z
+run 0
+undump 1
+
+# ---------- Result -----------------------------------
+# Process lattice_constant.dat to obtain the average lattice constant

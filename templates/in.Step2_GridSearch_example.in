@@ -1,0 +1,105 @@
+
+# LAMMPS Input File for Grain Boundaries
+# Public example version:
+# - private absolute paths removed
+# - original structure and variable names preserved
+
+# ---------- Initialize Simulation ---------------------
+clear
+units metal
+dimension 3
+boundary p p p
+atom_style atomic
+
+# ---------- Create Atomistic Structure ---------------------
+# This file generates a Sigma3(112) ITB candidate structure and allows
+# rigid-body translations to be scanned through input variables.
+
+lattice fcc ${latticeConst}
+region whole block ${xp0} ${xp1} ${yp00} ${yp55} ${zp0} ${zp1} units box
+create_box 2 whole
+
+region g21 block INF INF ${yp0} ${yp1} INF INF units box
+lattice fcc ${latticeConst} orient x ${xx2} ${xy2} ${xz2} orient y ${yx2} ${yy2} ${yz2} orient z ${zx2} ${zy2} ${zz2}
+create_atoms 1 region g21
+
+region g1 block INF INF ${yp2} ${yp3} INF INF units box
+lattice fcc ${latticeConst} orient x ${xx1} ${xy1} ${xz1} orient y ${yx1} ${yy1} ${yz1} orient z ${zx1} ${zy1} ${zz1}
+create_atoms 1 region g1
+
+region g22 block INF INF ${yp4} ${yp5} INF INF units box
+lattice fcc ${latticeConst} orient x ${xx2} ${xy2} ${xz2} orient y ${yx2} ${yy2} ${yz2} orient z ${zx2} ${zy2} ${zz2}
+create_atoms 1 region g22
+
+group g1 region g1
+group g21 region g21
+group g22 region g22
+
+# ---------- Define Interatomic Potential ---------------------
+# Replace ${potential_alloy} and ${potential_fs} with the paths to your files
+pair_style hybrid/overlay eam/alloy eam/fs
+pair_coeff * * eam/alloy ${potential_alloy} Cr Ni
+pair_coeff * * eam/fs    ${potential_fs}    Cr Ni
+
+neighbor 2.0 bin
+neigh_modify delay 10 check yes
+
+# Example: assign alloy composition after creating the bicrystal
+set type 1 type/ratio 2 ${NiFrac} ${seed}
+
+# ---------- Displace atoms and delete overlapping atoms ---------------------
+
+delete_atoms overlap 0.01 g1 g21
+delete_atoms overlap 0.01 g22 g1
+
+displace_atoms g1 move ${disX} ${disY0} ${disZ} units lattice
+delete_atoms overlap ${cutOff} g1 g21
+delete_atoms overlap ${cutOff} g22 g1
+
+# ---------- Define Settings ---------------------
+compute csym all centro/atom fcc
+compute eng all pe/atom
+compute eatoms all reduce sum c_eng
+
+# ---------- Minimization ---------------------
+reset_timestep 0
+thermo 10
+thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
+
+min_style cg
+minimize 1e-12 1e-12 10000 100000
+
+# ---------- Box Relaxation + Minimization ---------------------
+reset_timestep 0
+thermo 10
+thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
+
+fix 1 all box/relax iso 0.0 vmax 0.001
+min_style cg
+minimize 1e-12 1e-12 10000 100000
+unfix 1
+
+min_style cg
+minimize 1e-12 1e-12 10000 100000
+
+# ---------- Calculate GB Energy ---------------------
+variable minimumenergy equal ${pEnergy}
+variable esum equal "v_minimumenergy * count(all)"
+variable xseng equal "c_eatoms - (v_minimumenergy * count(all))"
+variable gbarea equal "lx * lz * 2"
+variable gbe equal "(c_eatoms - (v_minimumenergy * count(all)))/v_gbarea"
+variable gbemJm2 equal ${gbe}*16021.7733
+variable gbernd equal round(${gbemJm2})
+
+print "GB energy is ${gbemJm2} mJ/m^2"
+
+# ---------- Dump and Restart ---------------------
+reset_timestep 0
+dump equil all custom 100 dump.minimized_${boundary_type}_${component} id type x y z
+run 0
+undump equil
+
+write_restart restart.al_${boundary_type}_${component}
+
+print "GB energy is ${gbemJm2} mJ/m^2"
+print "All done"
