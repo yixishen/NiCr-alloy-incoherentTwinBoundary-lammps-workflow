@@ -71,6 +71,10 @@ before using the automated workflow.
 │   └── python-workflow.md
 ├── templates/
 ├── examples/
+│   ├── step1_latticeConst/
+│   ├── step2_gridSearch/
+│   ├── step3_equilibrate/
+│   └── step4_eco/
 ├── scripts/
 │   ├── createInput/
 │   │   ├── Step1_latticeConst.py
