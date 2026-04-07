@@ -1,0 +1,26 @@
+# Step 2 representative parameter set (documentation example)
+# This file is not meant to be complete production input.
+# It exists to show the type of information that the generator must supply.
+
+case_name        = Sigma3_112_Ni90Cr_gridsearch_example
+potential_alloy  = ../../potentials/FeCrNi_d.eam.alloy
+potential_fs     = ../../potentials/FeCrNi_s.eam.fs
+NiFrac           = 0.9
+seed             = 722302
+
+# Example physical inputs
+latticeConst     = 3.530
+pEnergy          = -4.244136667
+
+# Translation variables scanned during grid search
+disX             = <set_by_grid_search>
+disY0            = <set_by_grid_search>
+disZ             = <set_by_grid_search>
+
+# Geometry/orientation variables
+# In practice these should come from your Python workflow or cell-builder logic.
+xp0, xp1, yp00, yp55, zp0, zp1 = <set_by_builder>
+yp0, yp1, yp2, yp3, yp4, yp5   = <set_by_builder>
+xx1 ... zz1                    = <orientation_matrix_grain_1>
+xx2 ... zz2                    = <orientation_matrix_grain_2>
+cutOff                         = <overlap_cutoff>

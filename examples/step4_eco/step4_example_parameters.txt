@@ -1,0 +1,13 @@
+# Step 4 representative parameter set (documentation example)
+
+restart_file   = ../step3_equilibrate/restart.NiCr_0.9_sig3_112_regular_comp0_600K
+potential_file = ../../potentials/FeNiCr_ArturV3.eam
+Tend           = 600
+eco_df         = 0.025
+cut_off        = <use_same_cutoff_convention_as_ECO_workflow>
+oriFile        = <path_to_orientation_reference_file>
+total_steps    = 200000
+
+# Notes:
+# - oriFile should point to the orientation-reference data required by fix orient/eco.
+# - In production, this stage is usually launched over many temperatures, seeds, and compositions.

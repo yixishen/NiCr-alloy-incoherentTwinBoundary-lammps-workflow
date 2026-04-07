@@ -1,0 +1,16 @@
+# Step 3 representative parameter set (documentation example)
+
+restart_file   = ../step2_gridSearch/restart.al_sig3_112_NiCr
+potential_file = ../../potentials/FeNiCr_ArturV3.eam
+Tend           = 600
+Tstep          = 5
+seed           = 722302
+modelNum       = 0
+Comp           = NiCr
+NiFrac         = 0.9
+size           = regular
+comp_index     = 0
+
+# Notes:
+# - Keep the original pair_coeff element ordering under review.
+# - This stage is a good manual example even though production runs are usually generated automatically.
