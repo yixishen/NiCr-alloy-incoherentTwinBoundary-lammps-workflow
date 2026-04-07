@@ -82,6 +82,10 @@ as the required structure unless you also edit the Python scripts.
 │   └── directory-structure.md
 ├── templates/
 ├── examples/
+│   ├── step1_latticeConst/
+│   ├── step2_gridSearch/
+│   ├── step3_equilibrate/
+│   └── step4_eco/
 ├── scripts/
 │   ├── createInput/
 │   ├── autoRun/
