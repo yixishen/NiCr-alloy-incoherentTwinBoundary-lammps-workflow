@@ -1,31 +1,28 @@
 # Python scripts
 
-This folder contains the public-facing Python workflow used to create and submit
-LAMMPS runs for the four main MD workflow steps.
+This folder contains the public-facing Python workflow used to create, submit,
+and post-process LAMMPS runs for the four main MD workflow steps.
 
 ## `createInput/`
-
-- `Step1_latticeConst.py`
-- `Step2_GridSearch.py`
-- `Step3_EqSigma3_112.py`
-- `Step4_ECOSigma3_112.py`
 
 These scripts read text templates and write case folders, LAMMPS inputs, and SLURM scripts.
 
 ## `autoRun/`
 
-- `job_runner.py`
-- `autoRun_Step1_LC.py`
-- `autoRun_Step2_GridSearch.py`
-- `autoRun_Step3_Eq.py`
-- `autoRun_Step4_ECO_112.py`
-
 These scripts submit and monitor jobs on a SLURM cluster.
 
-## Public-facing cleanup principles used here
+## `postProcess/`
 
-- editable settings grouped near the top,
-- repo-relative paths instead of hard-coded `/home/...` paths,
-- reduced duplicated queue-management logic,
-- clearer directory-generation logic for Step 2,
-- minimal structural changes to keep the workflow recognizable.
+These scripts summarize outputs after the runs have completed:
+
+- `latticeConst.py` for Step 1 lattice-constant results
+- `GridSearch_GBenergy.py` for Step 2 grid-search results
+- `extractGBmigration_timestep.py` for Step 4 ECO migration trajectories
+
+## Important note
+
+The scripts depend on a consistent directory structure.
+See:
+
+- `docs/directory-structure.md`
+- `docs/postprocess.md`
